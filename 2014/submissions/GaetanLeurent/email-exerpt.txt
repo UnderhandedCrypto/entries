@@ -1,0 +1,17 @@
+
+Dear Organizers,
+
+Here is my submission to the Underhanded Crypto competition.
+
+It adds a backdoor to a proof-of-concept implementation of Stern's 
+authentication algorithm by Cayrel et al.
+
+Please find attached a description of the backdoor, and the patch. (The 
+original implementation from Cayrel et al. is available from: 
+https://docs.google.com/file/d/0B4Cy03-L745ZdW8xQ2JTaWRMYzA)
+
+Best regards,
+
+-- 
+Gaëtan Leurent
+

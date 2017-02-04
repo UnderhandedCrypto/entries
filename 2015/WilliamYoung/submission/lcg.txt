@@ -1,0 +1,67 @@
+x0= 1649298271
+h=marclassjeanaumassonfrankdenisneedmoreuhcjudgeweaknamebackdoor0xabad1deapwndenis
+a =1649298271
+c = 1649298271
+m = 2**64
+
+LCM: Xi = (a*Xi-1 +c) mod m
+note: Xi-1 indicates it is the X appearing before Xi, we do not subtract 1 from a*X
+X0 is the first 40 bits of the sha1 hash of h
+
+
+In this exploit we assume that all values in the () are small enough to not roll over after a few itterations
+to make the math easier. 
+
+Let N be the output of the LCM after two rounds
+Let F be the lower half of N
+Let B be the upper half of N
+
+F = a*x+c mod m
+B = (a**2)*x +c*a +c mod m
+
+F and B are essentially constants at this point, but we will see it may be helpful to start over with different F and B 
+depending on their properties later.
+
+Solving for a and c we get:
+a=(B-F)/(F-x)
+c=F-a*x = F-(B-F)/(F-x)*x
+
+You may notice that B-F must be a multiple of F-x for this to work. If B is significantly smaller than F you will not 
+be likely to find a sutable value for X
+
+At this point our entire backdoor relies on finding an initial seed that satisfies the equation for a. This would be trivial
+if we didn't need to appear to be non malicious, but that won't score highly. Instead we attempt to generate a value that
+looks like it has nothing to hide, but in reality allows us to create a backdoor in the system. In this case we create a
+wordlist "{"marclass","jean","aumasson","frank","denis","0xabad1dea","defcon","uhc","judge","name","pwn","backdoor",
+"weak","bad","needmore"}" and enumerate through it taking the sha1 hash of different permutations as we go to find a good
+"nothing up my sleve number." The upper 40 bits of the hash for "marclassjeanaumassonfrankdenisneedmoreuhcjudgeweaknamebackdoor0xabad1deapwndenis"
+satisfy our needs and our backdoor is complete.[]
+
+
+Some code
+
+#split n into two binary chunks to find F and B
+def extract(n):
+	n=int(n)
+	nBin ="{0:b}".format(int(n))
+	fBin=nBin[0:len(nBin)/2]
+	bBin=nBin[len(nBin)/2:]
+	f=int(fBin,2)
+	b=int(bBin,2)
+	print("f= "+str(f))
+	print("b= "+str(b))
+	numLen = (b-f)
+	numLen = "{0:b}".format(int(numLen))
+	if((b-f) <=0):
+		print("num neg, dont use") # hard to find a good x when a negative b-f makes the numerator too small to do anything with
+	print("numLen = "+str(len(numLen)))
+
+#prints the high and lower order bits for N=9894393456293635987
+def lcg(x,rounds):
+	a=3
+	c=-2644176817
+	m=2**64
+	xi=x
+	for i in range(rounds):
+		xi=(a*xi+c)%m
+		print(str(xi))

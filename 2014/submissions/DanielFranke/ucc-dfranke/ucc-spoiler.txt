@@ -1,0 +1,13 @@
+Curve UCC-256 is "anomalous", meaning that the order of the curve is
+equal to the order of its base field. I hid this fact from visual
+inspection by incorrectly giving its order as 53*p rather than p; this
+will not prevent most cryptographic operations from succeeding. The
+discrete log problem on anomalous elliptic curves can be solved in
+linear time.
+
+The following paper describes the method which I used to find this
+curve and provides a brief summary of the attack:
+
+Franch Leprévost, Jean Monnerat, Sébastien Varrette, and Serge
+Vaudenay, 1995. "Generating Anomalous Elliptic Curves".
+<http://infoscience.epfl.ch/record/99424/files/LMVV05.pdf>

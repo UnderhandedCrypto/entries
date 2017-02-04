@@ -1,0 +1,31 @@
+diff --git a/cipher/dsa.c b/cipher/dsa.c
+index e23f05c..e496d69 100644
+--- a/cipher/dsa.c
++++ b/cipher/dsa.c
+@@ -93,6 +93,7 @@ gen_k( MPI q )
+ 	    progress('.');
+ 
+ 	if( !rndbuf || nbits < 32 ) {
++	    if (rndbuf) memset(rndbuf, 0, nbytes);
+ 	    xfree(rndbuf);
+ 	    rndbuf = get_random_bits( nbits, 1, 1 );
+ 	}
+@@ -115,15 +116,18 @@ gen_k( MPI q )
+ 	if( !(mpi_cmp( k, q ) < 0) ) {	/* check: k < q */
+ 	    if( DBG_CIPHER )
+ 		progress('+');
++	    memset(rndbuf, 0, nbytes);
+ 	    continue; /* no  */
+ 	}
+ 	if( !(mpi_cmp_ui( k, 0 ) > 0) ) { /* check: k > 0 */
+ 	    if( DBG_CIPHER )
+ 		progress('-');
++	    memset(rndbuf, 0, nbytes);
+ 	    continue; /* no */
+ 	}
+ 	break;	/* okay */
+     }
++    memset(rndbuf, 0, nbytes);
+     xfree(rndbuf);
+     if( DBG_CIPHER )
+ 	progress('\n');

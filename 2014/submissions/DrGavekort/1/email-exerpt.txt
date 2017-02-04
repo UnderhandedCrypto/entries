@@ -1,0 +1,7 @@
+Spendon Gavekort [my pseudonym]: "KALE: A High-Degree
+Algebraic-Resistant Variant of The Advanced Encryption Standard".
+
+The main body of the text is just a goofy diversion, the backdoor is
+described in Appendix B on the last page. I also have reference
+implementations (which only differ from AES in the S-Boxes).
+

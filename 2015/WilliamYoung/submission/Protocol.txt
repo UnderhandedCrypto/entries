@@ -1,0 +1,38 @@
+Constants/ Definitions:
+Alice is the client
+Bob is the server
+N is a constant, the backdoored number and is public
+g is a generater in N  and is public (can be basically anything with gcd(g,N)=1) and is always implied to be mod N in the notation
+h is an arbitrary cryptographic hash and is public
+| denotes concatonation 
+x denotes (username|password|salt) and is private
+
+
+Alice (client) wants to communicate with Bob (server) and login to her account.
+
+Let's say Alice already is registered with Bob and Bob has stored in his DB the value g^h(x)
+
+1 Alice sends Bob her username and a request to begin login.
+
+2 Bob looks up her stored value of g^h(x), salt, and generates a random 64 bit nonce. Metadata such as Alice's IP, Bob's 
+IP, and the time are part of the nonce.
+
+3 Bob sends Alice the salt, and nonce.
+
+4 Alice recieves the salt and nonce and verifies that the metadata in the nonce(her and Bob's IPs and timestamp) is what 
+is expected. If the values in the nonce are abnormal Alice is prompted to try again or terminate the login attempt.
+
+CORRECTION: (x|nonce)^g
+5 If Alice accepts the salt and nonce she calculates g^h(g^h(x)|nonce) and g^(x|nonce) Alice then encrypts the string
+"totally not backdoored we promise" with either AES 128, or ThreeFish 256/512/1024 in CBC mode using g^h(g^h(x)|nonce) 
+and g^(x|nonce) as the key and IV. The selection of symmetric cypher needs to have a block size that matches up with the 
+bit length of the backdoored N. Other than that, the choice of cypher is not important as long as it's strong. 
+
+6 Alice calculates the HMAC-SHA-256 for the ciphertext using the same key and appends it to the blob
+
+6 Alice sends the encrypted text to Bob who can verify it because he knows g^h(x) and can compute the key g^h(g^h(x)|nonce)
+
+7 Bob verifies the mac and ciphertext were encrypted with the correct key and grants Alice access. 
+
+
+

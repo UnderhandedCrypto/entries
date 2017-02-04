@@ -1,0 +1,39 @@
+The Attack
+==========
+
+There is a fairly well known attack on ECDSA which allows recovery of the
+private key if the ephemeral private key k is reused using this equation:
+
+    z1*s2 - z2*s1
+k = -------------
+      r*(s1-s2)
+
+    s1*k - z1
+d = ---------
+        k
+
+For my entry, I have extended this attack to work in cases where there is a
+known difference between the k values used in two signatures
+(special thanks for Alex Fink for assistance working the math out)
+
+     r2*z1 + r1*(c*s2-z2)
+k1 = --------------------
+        s1*r2 - s2*r1
+
+    s1*k1 - z1
+d = ----------
+        k1
+
+and constructed a variant of the ECDSA self-signing operation that is
+vulnerable to this key recovery attack.
+
+Please see a demo implementation in ecss_attack.py
+
+if the self-signature is valid, d and Q will be returned.
+
+$ ./ecss_attack.py G2PPorqFXzGHKk18+SruRy+ewkNPuaFS9trjjScBLr6t63yrxaUpu/2X+jzAUFT9jCvCNuVoYyN7wCNDkHEaRWU=
+d:  a8be309d4fd42746f766f7e5fac8d1a6fdd5c887b67cb4217d13323b5c6d0336
+Q:  02780dddb3cb8b31756afb67769fd23bd3ad669509565898750d35b643af101396
+
+The "digits of pi" that are not actually all digits of pi are only present as
+a red herring and do not contribute to the attack in any way.

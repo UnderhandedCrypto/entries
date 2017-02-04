@@ -1,0 +1,169 @@
+diff -ru openssl-1.0.1j/crypto/ec/ec_curve.c openssl-1.0.1j.new/crypto/ec/ec_curve.c
+--- openssl-1.0.1j/crypto/ec/ec_curve.c	2014-10-15 08:53:39.000000000 -0400
++++ openssl-1.0.1j.new/crypto/ec/ec_curve.c	2014-11-28 23:59:49.645079970 -0500
+@@ -1822,6 +1822,36 @@
+ 
+ #endif
+ 
++static const struct { EC_CURVE_DATA h; unsigned char data[0+33*6]; }
++  _EC_UCC_256 = {
++    { NID_X9_62_prime_field,0,33,1 },
++    {                                                          /* no seed */
++         0x04,0xA7,0x86,0x31,0x50,0xF5,0xDC,0x0C,0xF9,0xFD,    /* p */
++         0xCA,0x7A,0x77,0x90,0x77,0xDB,0x5A,0x2C,0x3D,0xA3,
++         0x1B,0xAD,0xF2,0xDA,0xDC,0x3D,0xA0,0x9C,0x58,0x8B,
++         0xEB,0x9B,0x7B,
++         0x01,0xDB,0x48,0x86,0x9C,0x41,0xC5,0xF6,0xED,0x74,    /* a */
++         0x6E,0xB0,0x23,0x58,0x06,0x03,0x6E,0x0F,0xBF,0x4B,
++         0x82,0xBA,0xB3,0x09,0xE2,0x10,0x08,0x7E,0xF5,0x3F,
++         0xE2,0xF7,0xB7,
++         0x01,0xDD,0x7E,0x71,0xCD,0xCD,0x64,0x0E,0xB3,0x06,    /* b */
++         0x3D,0x31,0x8D,0x7A,0xF6,0x8F,0xF2,0xBD,0xA9,0x8F,
++         0xBB,0x4C,0xD5,0x35,0xFC,0x1E,0x65,0x68,0xEC,0xDD,
++         0x5B,0x17,0xD8,
++         0x02,0x41,0xA6,0xD9,0x97,0xF6,0xE8,0x00,0x57,0x55,    /* x */
++         0xB8,0x84,0x9F,0xB1,0x71,0x07,0xD8,0x0E,0xDE,0x7E,
++         0xD0,0x57,0x80,0xE1,0x63,0xE4,0x9D,0xD7,0x2A,0xFF,
++         0xB1,0x20,0x42,
++         0x02,0x20,0x2F,0xF5,0xCA,0xC0,0x22,0x0E,0x0E,0x94,    /* y */
++         0x6A,0xBE,0x18,0x59,0x67,0xAA,0xF3,0x1A,0x75,0x58,
++         0x1B,0x17,0xC7,0xE2,0x3C,0x75,0xD1,0xA9,0x05,0xCE,
++         0x02,0x6F,0x5B,
++         0xF6,0xAE,0xC8,0x35,0xC2,0xE6,0x8E,0xAF,0xC1,0x8A,    /* order */
++         0xEB,0x5A,0xC0,0xE8,0xD0,0x69,0xAB,0x28,0xC2,0xC4,
++         0xBB,0x03,0x47,0x4F,0x98,0xC2,0x40,0x5E,0x54,0xF7,
++         0xC7,0x30,0x77 }
++     };
++
+ typedef struct _ec_list_element_st {
+ 	int	nid;
+ 	const EC_CURVE_DATA *data;
+@@ -1928,6 +1958,7 @@
+ 	{ NID_ipsec4, &_EC_IPSEC_185_ID4.h, 0, "\n\tIPSec/IKE/Oakley curve #4 over a 185 bit binary field.\n"
+ 	  "\tNot suitable for ECDSA.\n\tQuestionable extension field!" },
+ #endif
++        { NID_ucc256, &_EC_UCC_256.h, 0, "Underhanded crypto contest" }
+ };
+ 
+ #define curve_list_length (sizeof(curve_list)/sizeof(ec_list_element))
+diff -ru openssl-1.0.1j/crypto/objects/obj_dat.h openssl-1.0.1j.new/crypto/objects/obj_dat.h
+--- openssl-1.0.1j/crypto/objects/obj_dat.h	2014-10-15 08:54:33.000000000 -0400
++++ openssl-1.0.1j.new/crypto/objects/obj_dat.h	2014-11-28 23:17:28.746377192 -0500
+@@ -62,12 +62,12 @@
+  * [including the GNU Public Licence.]
+  */
+ 
+-#define NUM_NID 920
+-#define NUM_SN 913
+-#define NUM_LN 913
+-#define NUM_OBJ 857
++#define NUM_NID 922
++#define NUM_SN 915
++#define NUM_LN 915
++#define NUM_OBJ 859
+ 
+-static const unsigned char lvalues[5974]={
++static const unsigned char lvalues[5995]={
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,               /* [  0] OBJ_rsadsi */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,          /* [  6] OBJ_pkcs */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x02,0x02,     /* [ 13] OBJ_md2 */
+@@ -919,6 +919,8 @@
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x08,/* [5946] OBJ_mgf1 */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x0A,/* [5955] OBJ_rsassaPss */
+ 0x2A,0x86,0x48,0x86,0xF7,0x0D,0x01,0x01,0x07,/* [5964] OBJ_rsaesOaep */
++0x69,                                        /* [5973] OBJ_uuid */
++0x69,0x85,0xE8,0xCE,0x94,0x20,0x87,0xBB,0xE0,0xA3,0x64,0xBD,0xC4,0x80,0x02,0x82,0xAE,0xD7,0x8A,0x1B,/* [5974] OBJ_ucc256 */
+ };
+ 
+ static const ASN1_OBJECT nid_objs[NUM_NID]={
+@@ -2399,6 +2401,8 @@
+ {"AES-256-CBC-HMAC-SHA1","aes-256-cbc-hmac-sha1",
+ 	NID_aes_256_cbc_hmac_sha1,0,NULL,0},
+ {"RSAES-OAEP","rsaesOaep",NID_rsaesOaep,9,&(lvalues[5964]),0},
++{"uuid","uuid",NID_uuid,1,&(lvalues[5973]),0},
++{"ucc256","ucc256",NID_ucc256,20,&(lvalues[5974]),0},
+ };
+ 
+ static const unsigned int sn_objs[NUM_SN]={
+@@ -3289,6 +3293,7 @@
+ 106,	/* "title" */
+ 682,	/* "tpBasis" */
+ 375,	/* "trustRoot" */
++921,	/* "ucc256" */
+ 436,	/* "ucl" */
+ 888,	/* "uniqueMember" */
+ 55,	/* "unstructuredAddress" */
+@@ -3296,6 +3301,7 @@
+ 880,	/* "userCertificate" */
+ 465,	/* "userClass" */
+ 879,	/* "userPassword" */
++920,	/* "uuid" */
+ 373,	/* "valid" */
+ 678,	/* "wap" */
+ 679,	/* "wap-wsg" */
+@@ -4202,6 +4208,7 @@
+ 293,	/* "textNotice" */
+ 106,	/* "title" */
+ 682,	/* "tpBasis" */
++921,	/* "ucc256" */
+ 436,	/* "ucl" */
+  0,	/* "undefined" */
+ 888,	/* "uniqueMember" */
+@@ -4211,6 +4218,7 @@
+ 465,	/* "userClass" */
+ 458,	/* "userId" */
+ 879,	/* "userPassword" */
++920,	/* "uuid" */
+ 373,	/* "valid" */
+ 678,	/* "wap" */
+ 679,	/* "wap-wsg" */
+@@ -4246,6 +4254,7 @@
+ 676,	/* OBJ_identified_organization      1 3 */
+ 11,	/* OBJ_X500                         2 5 */
+ 647,	/* OBJ_international_organizations  2 23 */
++920,	/* OBJ_uuid                         2 25 */
+ 380,	/* OBJ_dod                          1 3 6 */
+ 12,	/* OBJ_X509                         2 5 4 */
+ 378,	/* OBJ_X500algorithms               2 5 8 */
+@@ -5091,5 +5100,6 @@
+ 154,	/* OBJ_secretBag                    1 2 840 113549 1 12 10 1 5 */
+ 155,	/* OBJ_safeContentsBag              1 2 840 113549 1 12 10 1 6 */
+ 34,	/* OBJ_idea_cbc                     1 3 6 1 4 1 188 7 1 1 2 */
++921,	/* OBJ_ucc256                       2 25 1561561632 2004357604 129040386 634766619 */
+ };
+ 
+diff -ru openssl-1.0.1j/crypto/objects/objects.txt openssl-1.0.1j.new/crypto/objects/objects.txt
+--- openssl-1.0.1j/crypto/objects/objects.txt	2014-10-15 08:53:39.000000000 -0400
++++ openssl-1.0.1j.new/crypto/objects/objects.txt	2014-11-28 23:17:09.676246601 -0500
+@@ -1290,3 +1290,7 @@
+ 			: AES-128-CBC-HMAC-SHA1		: aes-128-cbc-hmac-sha1
+ 			: AES-192-CBC-HMAC-SHA1		: aes-192-cbc-hmac-sha1
+ 			: AES-256-CBC-HMAC-SHA1		: aes-256-cbc-hmac-sha1
++
++
++joint-iso-itu-t 25                 : uuid
++uuid 1561561632 2004357604 129040386 634766619  : ucc256
+diff -ru openssl-1.0.1j/crypto/objects/obj_mac.h openssl-1.0.1j.new/crypto/objects/obj_mac.h
+--- openssl-1.0.1j/crypto/objects/obj_mac.h	2014-10-15 08:53:39.000000000 -0400
++++ openssl-1.0.1j.new/crypto/objects/obj_mac.h	2014-11-28 23:17:27.638485797 -0500
+@@ -4030,3 +4030,11 @@
+ #define LN_aes_256_cbc_hmac_sha1		"aes-256-cbc-hmac-sha1"
+ #define NID_aes_256_cbc_hmac_sha1		918
+ 
++#define SN_uuid		"uuid"
++#define NID_uuid		920
++#define OBJ_uuid		OBJ_joint_iso_itu_t,25L
++
++#define SN_ucc256		"ucc256"
++#define NID_ucc256		921
++#define OBJ_ucc256		OBJ_uuid,1561561632L,2004357604L,129040386L,634766619L
++
+diff -ru openssl-1.0.1j/crypto/objects/obj_mac.num openssl-1.0.1j.new/crypto/objects/obj_mac.num
+--- openssl-1.0.1j/crypto/objects/obj_mac.num	2014-10-15 08:53:39.000000000 -0400
++++ openssl-1.0.1j.new/crypto/objects/obj_mac.num	2014-11-28 23:17:26.630584600 -0500
+@@ -917,3 +917,5 @@
+ aes_192_cbc_hmac_sha1		917
+ aes_256_cbc_hmac_sha1		918
+ rsaesOaep		919
++uuid		920
++ucc256		921

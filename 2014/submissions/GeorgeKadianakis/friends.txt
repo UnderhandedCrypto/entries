@@ -1,0 +1,99 @@
+==Friends! One-time message drop system==
+
+  Hello!!!
+
+  I'm happy to tell you about my new project!
+
+  We are Friends!
+
+  Friends! allows people to upload small encrypted blobs on the
+  cloud. The blobs can later be retrieved by people who have knowledge
+  of a high-entropy secure password.
+
+  The Friends! protocol uses good hash and encryption, and a smart
+  protocol that allows you and your friends to rendezvous inside the
+  cloud!
+
+  Friends! is all about having fun and delivering the right files to
+  the right people. Always end-to-end. Always Friends!
+
+==Actors==
+
+  Alice is a source that wants to send a file.
+  Bob is a journalist who wants to receive that file.
+
+  Friends server is our honest-not-curious server!
+
+==Protocol description==
+
+  1) Alice <-> Bob exchange pre-shared password
+
+     Alice and Bob exchange out-of-band a high-entropy readable
+     Friends! password generated using the generate_pass.py utility.
+
+     Careful! Write the password on a piece of paper and don't
+     misplace it!
+
+     The Friends! password will be used for Bob to rendezvous with
+     Alice, and so that Bob can decrypt Alice's file.
+
+  2) Alice uploads file
+
+     Alice connects to Friends! server and sends an encrypted file of
+     size HASH_LEN. She also sends a cryptographic hash of the Friends!
+     password, that will be used as the index in our rendezvous
+     database.
+
+     [*] Alice -> Server:    h(password), FriendsEncrypt_k(file)
+
+       The FriendsEncrypt function is a very simple byte-wise XOR cipher
+       that uses the encryption key 'k':
+          FriendsEncrypt_k(file) = file XOR k
+
+       The encryption key 'k' is derived as
+           k = HMAC(key=password, msg="Friends!")
+
+       In short, the file (which is HASH_LEN bytes by definition) is
+       XORed with the encryption key 'k' (which is also HASH_LEN bytes
+       since it's the output of HMAC) in an operation that resembles
+       the one-time pad both in security and technique.
+
+     The server saves the ciphertext in rendezvous index h(password)
+     of its rendezvous database.
+
+  3) Bob asks Friends! server for file
+
+    After a few months Bob wants the file.
+
+    To get it, Bob connects to Friends! server and sends the rendezvous
+    index h(password):
+
+    [*] Bob -> Server: h(password)
+
+  4) Friends! server gives Bob the file
+
+    Friends! server checks its rendezvous database and if it finds the
+    rendezvous index at h(password) being booked, it returns the
+    encrypted file to the attacker:
+
+    [*] Server -> Bob: FriendsEncrypt_k(file)
+
+    If the Friends! server does not see a booked rendezvous index, it
+    replies with a 404.
+
+  Now Bob has the ciphertext and can trivially generate the encryption
+  key k since he knows Friends! password. The file has been delivered
+  safely!
+
+  Friends! were made! :)
+
+==Security notes==
+
+  The cryptographic hash h() is instantiated with SHA256.
+  The hash-based message authentication code HMAC() is instantiated with HMAC-SHA256.
+
+  The protocol assumes that an attacker can't calculate HMAC(k, m) given (m, h(k)).
+
+  If your file is shorter than HASH_LEN bytes, it should be padded to
+  HASH_LEN bytes in a secure fashion. If your file is bigger than
+  HASH_LEN bytes, no problem: chunk it up and send it in multiple messages.

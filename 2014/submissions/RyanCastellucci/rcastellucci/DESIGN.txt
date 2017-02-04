@@ -1,0 +1,81 @@
+Introduction
+============
+
+The standard describing ECDSA (Standards for Efficient Cryptography) has an
+interesting algorithm for self-signing keys described in section 4.1.7 that
+nobody seems to use. The "Self-Signing Operation" describes a method which
+results in a signature that covers itself for some keypair (d,Q). The algorithm
+works as follows:
+
+    * Select ephemeral keypair (k,R) and take the X coordinate of R as r
+    * Select random integer s in the range [1, n - 1], where n is the order of
+      the curve
+    * Form message M from (r,s) and z = hash(M)
+    * Compute private key d = r^-1 * (s*k - z)
+    * Public key Q can be computed either from d or from the signature using
+      the public key recovery algorithm specified in SEC1v2 sec 4.1.6.
+
+A significant downside is that the following similar algorithm also works
+
+    * Select integer r in the range [1, n - 1], where n is the order of the
+      curve
+    * Select integer s in the range [1, n - 1], where n is the order of the
+      curve
+    * Form message M from (r,s) and z = hash(M)
+    * Compute private key d = r^-1 * (s*k - z)
+    * Compute public key Q from the signature. The private key d cannot be
+      computed.
+
+This works because the algorithm generates the "signature" from (r,s) and then
+uses k to work backwards and get a private key, but as the "signature" requires
+neither d nor k to compute, a bogus, but seemingly valid "signature" can be
+crafted.
+
+An improved elliptic curve self signature (ECSS)
+------------------------------------------------
+
+Fortunately, this weakness can be resolved with a slightly more complicated
+algorithm.
+
+    * s1 will be a well-known "fixed" arbitrary value.
+    * Select ephemeral keypair (k1,R1) and take the X coordinate of R1 as r1
+    * Form message M from (r1,s1) and z1 = hash(M)
+    * Compute private key d = r1^-1 * (s1*k1 - z1)
+    * Public key Q can be computed either from d or from the signature using
+      the public key recovery algorithm specified in SEC1v2 sec 4.1.6.
+    * Compute ephemeral keypair (k2,R2) from (k1,R1)+hash(Q||1) and take the
+      X coordinate of R2 as r2
+    * Compute z2 = hash(Q||2)
+    * Compute s2 = k2^-1 * (z2 + r2 * d)
+    * Output signature (r1,s2)
+
+This is implemented in ecss.py and can be demoed with ecss_generate.py
+
+d, Q and an encoded self-signature will be output.
+
+$ python ecss_generate.py THIS_IS_A_SEED
+d:  a8be309d4fd42746f766f7e5fac8d1a6fdd5c887b67cb4217d13323b5c6d0336
+Q:  02780dddb3cb8b31756afb67769fd23bd3ad669509565898750d35b643af101396
+ss: G2PPorqFXzGHKk18+SruRy+ewkNPuaFS9trjjScBLr6t63yrxaUpu/2X+jzAUFT9jCvCNuVoYyN7wCNDkHEaRWU=
+$ ./ecss_attack.py G2PPorqFXzGHKk18+SruRy+ewkNPuaFS9trjjScBLr6t63yrxaUpu/2X+jzAUFT9jCvCNuVoYyN7wCNDkHEaRWU=
+d:  a8be309d4fd42746f766f7e5fac8d1a6fdd5c887b67cb4217d13323b5c6d0336  
+Q:  02780dddb3cb8b31756afb67769fd23bd3ad669509565898750d35b643af101396
+
+Verification is fairly straightforward:
+
+    * Compute z1 from (r1,s1) - remember that s1 is a well known fixed value
+    * Recover Q from (r1,s1) and z1
+    * Compute r2 from r1+hash(Q||1) using public point addition (k1 isn't
+      needed for this and we don't get k2 out of the operation)
+    * Computer z2 = hash(Q||2)
+    * Verify signature (r2,s2) over z2 with Q
+
+Cool, right? It's no longer possible to construct a valid self signature unless
+one has a the private key for it.
+
+This is implemented in ecss.py and can be demoed with ecss_verify.py
+
+Q will be output for a valid self-signature
+
+$ ./ecss_verify.py G2PPorqFXzGHKk18+SruRy+ewkNPuaFS9trjjScBLr6t63yrxaUpu/2X+jzAUFT9jCvCNuVoYyN7wCNDkHEaRWU=
+Q:  02780dddb3cb8b31756afb67769fd23bd3ad669509565898750d35b643af101396  

@@ -1,0 +1,117 @@
+μcc - Micro Chat Component
+
+Micro Chat Component, abbreviated μcc from here on, is a program for
+secure one-on-one communication on the Internet. It's written in only
+500 lines of C++(03) and uses battle-tested cryptographic libraries.
+
+Installation
+============
+
+μcc should run on all POSIX-compatible systems (but so far has only
+been tested on Linux). Its external dependencies are:
+ * NaCl    http://nacl.cr.yp.to/
+ * scrypt  https://www.tarsnap.com/scrypt.html
+
+The Makefile expects a symbolic link named "nacl" to NaCl's build
+and a symbolic link named "scrypt" to scrypt's build. An example
+of a full installation looks like this:
+
+$ tar xf ucc.tar.gz
+$ cd ucc
+$ curl -O http://hyperelliptic.org/nacl/nacl-20110221.tar.bz2
+$ tar xf nacl-20110221.tar.bz2
+$ cd nacl-20110221
+$ ./do
+$ cd ..
+$ ln -s nacl-20110221/build/$(hostname -s) nacl
+$ curl -O https://www.tarsnap.com/scrypt/scrypt-1.1.6.tgz
+$ tar xf scrypt-1.1.6.tgz
+$ cd scrypt-1.1.6
+$ ./configure && make
+$ rm scrypt/scrypt-main.o
+$ cd ..
+$ ln -s scrypt-1.1.6 scrypt
+$ make
+
+Use
+===
+
+The μcc binary (ucc) is really just that: a *Micro* Chat *Component*.
+It runs as a server if started without arguments and as a client if a
+host has been specified, but communication is half-duplex: the client
+is able to send data to the server, but not the other way around. If
+you desire full-duplex communication, you'll have to start two uccs.
+
+After starting, ucc will prompt for a password. Both sites have to
+use the same (hopefully secure) password, so choose wisely.
+
+Design
+======
+
+The design of the protocol and its implementation is discussed
+separately.
+
+Protocol
+--------
+
+The protocol is stream-oriented: a TCP connection is used to transport
+an arbitrary number of strings. A typical session might look like this:
+
++------+--------+------------------------------------------+--------+--
+| salt | nonce1 | E(nonce1, KDF(salt, password), message1) | nonce2 | …
++------+--------+------------------------------------------+--------+--
+
+The first string a client sends over a newly established TCP connection
+is always a random salt. Both client and server use this salt to derive
+a session key from their shared password.
+
+Following the salt is an arbitrary number of nonce-message pairs. The
+random nonce is used to ensure that not even identical messages result
+in the same string after encrypting them with the session key.
+
+To deal with arbitrarily long encrypted messages, an implementation of
+djb's Netstrings is used. In a nutshell: each of the strings described
+above is prefixed by it's length in ASCII and a colon, and suffixed by
+a comma:
+
++--------------------+----------------------------+----------------+--
+|16:SALTSALTSALTSALT,|24:NONCENONCENONCENONCENONC,|12:CIPHERTEXTCI,| …
++--------------------+----------------------------+----------------+--
+
+Implementation
+--------------
+
+Care has been taken to touch as little of the cryptographic innards as
+possible. In crypto.{h,c}pp, there are the following components:
+
+ * Random    - Provides random data from /dev/urandom
+ * stretch   - Calls scrypt to derive a session key from salt/password
+ * Secretbox - Encapsulates NaCl's secret key authenticated encryption
+
+MessageToEncrypt then uses these components to produce a random nonce
+and the cipher text from a salt, the password, and the plain text. Its
+opposite, MessageToDecrypt, produces plain text from a received nonce,
+a salt, the password, and the cipher text.
+
+In network.{h,c}pp, a Socket class and subclasses encapsulate sockets
+for sending, accepting, and receiving, respectively. Functions in the
+netstring namespace implement djb's Netstrings, with most of the code
+taken from the original proposal: http://cr.yp.to/proto/netstrings.txt
+
+Finally, main.cpp uses everything described above to set up the client
+or server and send or receive lines. To make communication a bit less
+disorienting for the server operator, an initial (encrypted) greeting
+containing the client's user name and host is sent.
+
+Bugs
+====
+
+The implementation still has few rough edges, but confidentiality and
+integrity of the messages is a given. There are a few checks that are
+still missing before the same can be said about availability (e.g.,
+there's no limit on the length of received netstrings yet), but those
+should be easy enough to add.
+
+The client and server machines are expected to be secure, there's no
+overwriting of sensitive data like the password. Again, easy enough
+to add.

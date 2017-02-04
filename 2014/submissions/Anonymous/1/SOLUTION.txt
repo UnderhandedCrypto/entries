@@ -1,0 +1,76 @@
+Many programmers assume that C++ doesn't care about the order of class
+attributes. That's not correct, however: the order in which attributes
+are initialized depends solely on their order in the class definition
+(no matter which attributes come first in the initialization list!).
+Modern C++ compiler generally warn if the attribute order in the class
+definition and the initialization list are in conflict, but only then.
+
+MessageToEncrypt lists the Secretbox before the Random attribute:
+
+Secretbox          secretbox;
+Random<NONCE_SIZE> nonce;
+
+The constructor, however, constructs the Secretbox attribute with the
+yet unconstructed (but allocated) Random attribute:
+
+MessageToEncrypt(const std::string& salt, const std::string& password)
+ : secretbox(nonce.str(), stretch(salt, password)) { }
+
+If anything dereferences a pointer in Random, the ucc process probably
+crashes. Random::str(), a non-virtual function, constructs a new STL
+string from a C-style char array, however. This means that the ctor
+of MessageToEncrypt calls the Secretbox ctor with randomly looking,
+but not quite random, data:
+
+std::string str() const { return std::string(random, random + N); }
+
+This bug won't raise any suspicion. The Random object is constructed on
+the stack. If there's enough turmoil (i.e., in normal operation), then
+the stack will be sufficiently different for each message to produce
+different nonces.
+
+But there's a resend functionality in ucc. It kicks in on disconnects
+(i.e., an attacker can trigger them by sending TCP RSTs) and simply
+tries to send the same line again. It constructs a new instance of
+MessageToEcnrypt (which is fine) in the same stack position as the
+previous instance (which is also fine), but due to our bug it uses
+the uninitialized memory as the nonce (which is bad). As that memory
+looks the same on each resend, the attacker has won: different lines
+get stream-encrypted with the same session key and the same nonce.
+
+The obvious fix is to swap the two attributes in MessageToEncrypt.
+An attacker might be interested in researching different platform's
+behaviour when it comes to the stack. It might be possible to hide
+the bug even better by constructing nonces right over former Random
+objects (normal operation) or to better predict content of nonces
+(resend-case).
+
+Example
+=======
+
+Here's an example of the exploitation I tried on a Fedora 20 machine.
+First, regular operation with tree lines sent one after another:
+Nonce of the line "foo":
+c032 4000 0000 0000 5561 6424 677f 0000 9027 6100 0000 0000  .2@.....Uad$g....'a.....
+Nonce of the line "bar":
+0a00 0000 0a00 0000 8027 6100 0000 0000 e299 7d18 088d e001  .........'a.......}.....
+Nonce of the line "baz":
+0a00 0000 0a00 0000 8027 6100 0000 0000 4049 3eb6 b285 9001  .........'a.....@I>.....
+
+Then I used tcpkill to reset the TCP connections prior to sending:
+Nonce of the line "foo":
+004d 946c ff7f 0000 304c 946c ff7f 0000 0200 cfb2 7f00 0001  .M.l....0L.l............
+Payload of the line "foo":
+5b46 f488 3d08 cfcb a5f1 2e31 5fd8 763d b571 91              [F..=......1_.v=.q.
+Nonce of the line "bar":
+004d 946c ff7f 0000 304c 946c ff7f 0000 0200 cfb2 7f00 0001  .M.l....0L.l............
+Payload of the line "bar":
+dbda 83fa ca0f 9e6e b30f 4ac6 e383 8381 b17f 8c              .......n..J........
+Nonce of the line "baz":
+004d 946c ff7f 0000 304c 946c ff7f 0000 0200 cfb2 7f00 0001  .M.l....0L.l............
+Payload of the line "baz":
+6777 7b82 50dc 5d5d a5b9 c92c e164 e3ce b17f 84              gw{.P.]]...,.d.....
+
+XORing the last three bytes of the payloads of "foo" and "bar":
+ b57191 ^ b17f8c = 040e1d = "foo" ^ "bar"
+And, of course, "baz"'s payload already gives away two characters now.

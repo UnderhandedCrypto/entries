@@ -1,0 +1,9 @@
+
+Please find attached a buggy program for the UH Crypto contest along with
+an ASCII text explanation of the program and bug.
+
+I suppose it belongs to the 'add a backdoor' category.
+
+Thanks
+Jacob Thompson
+

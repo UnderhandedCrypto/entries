@@ -1,0 +1,10 @@
+Le 02/12/2014 14:38, Gaëtan Leurent a écrit :
+> Dear Organizers,
+>
+> Here is my submission to the Underhanded Crypto competition.
+
+I realize that I forgot to add licensing information.  Please consider 
+my code as CC0 licensed.
+
+-- 
+Gaëtan Leurent

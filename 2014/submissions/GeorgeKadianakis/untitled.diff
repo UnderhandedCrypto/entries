@@ -1,0 +1,12 @@
+diff --git a/friends.txt b/friends.txt
+index 049ffa6..1bb11c4 100644
+--- a/friends.txt
++++ b/friends.txt
+@@ -17,6 +17,10 @@
+  Friends! is all about having fun and delivering the right files to
+  the right people. Always end-to-end. Always Friends!
+
++  (A Friends! server should not be able to decrypt your messages
++  without knowing your password. If this end-to-end confidentiality
++  breaks, Friends! is broken! *wink* *wink*)
++

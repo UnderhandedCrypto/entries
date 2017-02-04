@@ -1,0 +1,21 @@
+
+Hello,
+
+after a fun Sunday I present you my submission for the Underhanded
+Crypto contest.
+
+It's a small protocol similar to Pond. The problem is that the server
+can learn a bit more information than it should.
+
+friends.txt is the Friends! protocol description. Please read that first.
+generate_pass.py is a utility of the Friends! protocol.
+
+friends_implementation.py is some code that exploits the
+issue. Hopefully it helps understanding.
+
+solution.txt is the solution of the problem.
+
+Hope you enjoy, and hopefully I didn't fuck something up :)
+
+Please let me know if you found it fun!
+

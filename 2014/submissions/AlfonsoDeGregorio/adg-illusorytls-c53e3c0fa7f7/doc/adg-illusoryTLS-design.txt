@@ -1,0 +1,204 @@
+The illusoryTLS Asymmetric Backdoor: August Dupin Meets the
+Kleptographer Y
+
+
+A submission by Alfonso De Gregorio (@secYOUre) to the 1st Underhanded
+Crypto Contest
+
+
+Category: Add a Backdoor
+
+
+0. Abstract -- Backdoor is Data; Data is Backdoor
+The common view is that backdoors are symmetric in nature and require 
+the presence of malicious logic in the target system code base (i.e., 
+everyone with knowledge about the internals of the backdoor can exploit
+it and code review can spot their presence). This work challenges this
+view. Backdoors can be asymmetric (i.e., the complete code for the 
+backdoored system does not enable anyone except the designer to exploit
+the backdoor) and be planted in data. Or: to paraphrase a popular quote
+on homoiconicity of some programming languages, backdoor is data, data 
+is backdoor.
+
+To illustrate the security implications of this family of malicious
+security artifacts this work:
+  0. Provides a working implementation of a backdoor embedded into the
+     RSA modulus of a Certification Authority public-key certificate 
+     and the code for a minimalistic client and server communicating 
+     over a TLS channel; 
+  1. Shows how this backdoor can completely pervert the security 
+     guarantees provided by the TLS protocol; 
+  2. Argues that, from a network security perspective, the 
+     architecture of illusoryTLS resembles the standard architecture
+     of web browsers and the associated certificate stores, 
+     communicating with web servers over TLS channels; and 
+  3. Points out that even the presence of a single CA certificate 
+     with a secretly embedded backdoor in the certificate store would
+     render the entire TLS security fictional. In fact, the current 
+     practice of universal implicit cross-certification makes the whole
+     PKI as weak as its weakest link [AA14, Gu11].
+
+Hence, as long as the implementations of RSA -- or, more generally,
+algorithms vulnerable to this class of attacks -- used by trusted
+entities (e.g., CAs) remain not auditable by relying parties, and
+whenever the backdoor designer is a threat to the target users, the
+security provided by illusoryTLS (i.e., none whatsoever) is not any
+different from the security of systems relying upon TLS for origin
+authentication, confidentiality, and message integrity guarantees.
+
+
+1. illusoryTLS
+illusoryTLS consists of three modules: a. a HTTPS client; b. a TLS
+ server; c. a certificate store. The code is part of network-simple-tls
+-- an Haskell library for simple network sockets usage patterns using 
+TLS security -- and is used as-is, without any modification [NST]. 
+
+For the sake of simplicity, and without loss of generality, the server
+implements an Echo service over TLS. The client sends a basic HTTP
+command over a TLS channel an awaits the server response.
+
+From a network security perspective, the architecture of illusoryTLS is
+similar to the architecture of standard Web technology, where browsers
+-- or other HTTP clients -- and servers rely on database of public-key
+certificates (i.e., certificate stores) as trust-anchors in the
+validation of the certification paths.
+
+
+2. Where is the backdoor?
+There is one backdoor in illusoryTLS and it is highly robust against 
+reverse-engineering. It is hidden in the public-key certificate of the
+CA the communicating entities rely upon to mutually authenticate (file
+path: env/certificatestore/cacert.pem).
+
+In particular, the upper order bits of the RSA modulus encode the
+asymmetric encryption of a seed generated at random. The same seed was
+used to generate one of the RSA primes of the CA public-key modulus.
+Hence, the RSA modulus is at the same time a RSA public key and an
+asymmetric ciphertext that gives to the backdoor designer, and only to
+the designer, the ability to factor with ease the said modulus.
+
+No backdoor was slipped into the cryptographic credentials issued to
+the communicating endpoints.
+
+
+3. The Impact and the Implications
+In turn, the backdoor designer can use the private-key recovered by 
+factoring the CA public modulus to break the TLS security guarantees at
+will, exposing the relying parties to a variety of attacks. They range 
+from impersonation (i.e.., authentication failure), to message 
+tampering (i.e., integrity erosion), to active eavesdropping of 
+encrypted communications (i.e., confidentiality loss), whenever the 
+attacker mounts a MITM attack.
+
+In order to exploit the backdoor, the designer needs to retain control
+over the key-generation of the target RSA modulus. However, s/he does
+not need to have access to any private key used by system actors,
+namely the Certification Authority and the communicating endpoints.
+Hence, the attacker does not need to purloin code or data from the work
+environment (i.e., the attack works without any need to tamper with the
+communicating endpoints).
+
+As long as the implementations of RSA -- or, more generally, algorithms
+vulnerable to this class of attacks -- used by trusted entities (e.g.,
+Certification Authorities) remain not auditable by relying parties
+(e.g., X.509 end-entities), any trust-anchor for the same trusted
+entities (e.g., root certificate) is to be regarded as a backdoor.
+
+That is to say that as long as the implementations of RSA used by CAs
+remain not auditable by relying parties, and whenever a hypothetical
+backdoor designer is a threat to the target users, the security
+provided by illusoryTLS (i.e., none whatsoever) is not any different
+from the security of systems relying on TLS for origin authentication,
+confidentiality, and message integrity guarantees.
+
+It is also worth to note that even the presence of a single CA
+certificate with a secretly embedded trapdoor in the certificate store
+would render the entire TLS security fictional. In fact, the practice
+of universal implicit cross-certification makes the whole PKI as weak
+as its weakest link [AA14, Gu11].
+
+
+4. Related Work
+Adam Young and Moti Yung introduced the notion of secretly embedded 
+trapdoor with universal protection (SETUP) at Crypto '96 [YY96]. The 
+backdoor hidden in illusoryTLS implements this security notion. More 
+specifically, it is an instance of the Young and Yung elliptic curve 
+asymmetric backdoor in RSA key generation [YY]. The work by Adam Young
+and Moti Yung expands on the research they published in the proceedings
+of Selected Areas in Cryptography 2005 [YY05].  The same authors 
+present a working implementation of their attack at 
+http://www.cryptovirology.com/.
+
+
+5. Nobody But Us: Security Properties
+As remarked in [YY], SETUP attacks have some remarkable properties: 
+  A. Asymmetry: The complete code for the backdoor does not enable
+     anyone except the designer to exploit the backdoor; and 
+  B  Indistinguishability: The backdoored key pairs appear to all 
+     probabilistic polynomial time algorithms like genuine (i.e., 
+     not backdoored) RSA key-pairs.
+
+It is worth to note how a conventional backdoor are symmetric in
+nature: the backdoor can be exploited by anyone with access to its
+code. Conversely, an asymmetric backdoor, even if published, can 
+only be exploited by the entity who planted it, assuming but not
+conceding that its designer can enforce effective access control
+on the backdoor (elliptic-cruve) private-key and on the key-recovery
+system.
+
+As such, an elliptic curve asymmetric backdoor provides an
+instantiation of the concept of 'Nobody But Us' (i.e., keys only we
+have) [A14, Go14].
+
+The second property makes the backdoor highly robust against
+reverse-engineering. As a matter of fact, the key pairs are
+computationally indistinguishable from key-pairs with no secrely
+embedded backdoor (under the ECDDH assumption).
+
+
+6. Backdoor Embedding Algorithm
+The backdoor embedding algorithm is as described in Chapter 10 of [YY].
+
+
+7. References
+
+ [A14] Dave Aitel, 'Nobody But Us', Daily Dave mailing list,
+       https://lists.immunityinc.com/pipermail/dailydave/
+       2014-April/000656.html
+
+[AA14] Axel Arnback, Hadi Asghari, Michel Van Eeten, Niko Van Eljk,
+       Security Collapse in the HTTPS Market,
+       https://dl.acm.org/citation.cfm?id=2673311
+
+[Go14] Jack Goldsmith, 'Cyber Paradox: Every Offensive Weapon is a
+       (Potential) Chink in Our Defense — and Vice Versa'
+       http://www.lawfareblog.com/2014/04/
+       cyber-paradox-every-offensive-weapon-is-a-potential-chink-
+       in-our-defense-and-vice-versa/
+
+[Gu11] Peter Gutmann, Diginotar broken arrow as a tour-de-force of PKI
+       fail, Cryptography Randombit mailing list, 
+       http://comments.gmane.org/
+       gmane.comp.security.cryptography.randombit/1215
+
+  [MC] Adam L. Young and Moti M. Yung, 'Malicious Cryptography,
+       Exposing Cryptovirology', 2004, ISBN: 0-7645-4975-8, J. Wiley
+
+ [NST] Renzo Carbonara, network-simple-tls, Haskell library for simple
+       network sockets usage patterns using TLS security,
+       https://github.com/k0001/network-simple-tls
+
+  [YY] Adam L. Young and Moti M. Yung, 'An Elliptic Curve Asymmetric
+       Backdoor in OpenSSL RSA Key Generation', Advances in 
+       Cryptovirology, to apper, http://www.cryptovirology.com/
+
+[YY05] Adam L. Young and Moti M. Yung, 'A Space Efficient Backdoor
+       in RSA and its Applications'. In Bart Preneel and Stafford E. 
+       Tavares, editors, Selected Areas in Cryptography -- '05, 
+       pp 128-143, Spring, 2005, Lecture Notes in Computer Science 
+       No. 3897.
+
+[YY96] Adam L. Young and Moti M. Yung, 'The Dark Side of Black-Box
+       Cryptography, or: Should we trust Capstone?'. In Advances in
+       Cryptology---Crypto '96, N. Koblitz (Ed.), LNCS 1109, 
+       pp. 89-103, 1996.

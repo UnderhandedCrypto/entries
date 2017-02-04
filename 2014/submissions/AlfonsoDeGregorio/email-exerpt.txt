@@ -1,0 +1,23 @@
+
+Hello!
+
+Thank you for organizing the Underhanded Crypto Contest. This is a
+timely initiative which I welcome.
+
+Please find attached illusoryTLS, my submission to the 'Add a
+Backdoor' category.
+
+Being unsure if the judges are expected to have access to the crypto
+design and to the explanation of the bug during the code review phase,
+I am attaching the implementation and the design as two separate
+files. Please, distribute them as appropriate.
+
+I welcome any feedback from you on the above and I wish everybody good
+luck with the contest.
+
+Thank you.
+
+Ciao,
+
+-- alfonso   @secYOUre
+

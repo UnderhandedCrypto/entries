@@ -1,0 +1,215 @@
+
+      ____ _  ______  _____
+     / ___| |/ /  _ \|  ___|    Collatz-based
+    | |   | ' /| | | | |_       Key
+    | |___| . \| |_| |  _|      Derivation
+     \____|_|\_\____/|_|        Function
+
+Rogdham's entry for the 2014 underhanded crypto contest.
+
+     ____             _       _
+    | __ )  __ _  ___| | ____| | ___   ___  _ __
+    |  _ \ / _` |/ __| |/ / _` |/ _ \ / _ \| '__|
+    | |_) | (_| | (__|   < (_| | (_) | (_) | |
+    |____/ \__,_|\___|_|\_\__,_|\___/ \___/|_|
+         _                     _       _   _
+      __| | ___  ___  ___ _ __(_)_ __ | |_(_) ___  _ __
+     / _` |/ _ \/ __|/ __| '__| | '_ \| __| |/ _ \| '_ \
+    | (_| |  __/\__ \ (__| |  | | |_) | |_| | (_) | | | |
+     \__,_|\___||___/\___|_|  |_| .__/ \__|_|\___/|_| |_|
+                                |_|
+
+
+**_/!\ SPOILER ALERT /!\ This file explains the backdoor!!!_**
+
+
+Table of contents
+=================
+
+ 0. Table of contents
+ 1. What the backdoor is
+ 2. Why does the backdoor exists
+ 3. Computing the backdoor
+
+
+What the backdoor is
+====================
+
+As suggested on the welcome page at https://underhandedcrypto.com/, you were
+looking for password hashing library that always accepts the password monkey?
+
+Well, CKDF is that password hashing library, except that the password monkey is
+always accepted **only for the user admin**.
+
+Oh, in fact **any** password will be accepted for user admin.
+
+
+The script `SPOILERS-show_backdoor-SPOILERS.py` is provided for easy checking
+of this statement.
+
+It should output a table similar to the following:
+
+       CREDENTIALS    ||             LOGIN ATTEMPT WITH PASSWORD
+     User  | Password || p@ssw0rd |  qwerty  | y8P!*8AH |  monkey  | letmein
+    -------+----------++----------+----------+----------+----------+----------
+     alice | p@ssw0rd ||   PASS   |          |          |          |
+      bob  |  qwerty  ||          |   PASS   |          |          |
+     admin | y8P!*8AH ||   PASS   |   PASS   |   PASS   |   PASS   |   PASS
+      eve  |  monkey  ||          |          |          |   PASS   |
+
+As you can see, just any password is accepted for user admin.
+
+
+Why does the backdoor exists
+============================
+
+The backdoor has been designed together with the CKDF algorithm. Hence, we need
+to dive into the algorithm to understand the backdoor.
+
+## __ckdf_round
+
+Here is `__ckdf_round` code (simplified):
+
+    state = _hash(state + pepper)
+    n = struct.unpack('>I', state[:4])[0]
+
+    # Collatz algo (with n > 0)
+    while n != 1:
+        if n % 2:
+            state = _hash(state + input_param)
+            n = n * 3 + 1
+        else:
+            state = _hash(state + pepper)
+            n /= 2
+
+    return state
+
+For clarity, here is the same function as a diagram:
+
+                           START
+                             |
+                 +-----------v-----------+
+                 | Mix state with pepper |
+                 +-----------------------+
+                             |
+                 +-----------v----------+
+                 | Compute n from state |
+                 +----------------------+
+                             |
+    |---------------------|  |
+    |                     v  v
+    |                   [ TEST ]
+    |       |-------------| | |----------------|
+    |       |               |                  |
+    |     n == 1         n is odd          n is even
+    |       |               |                  |
+    |    +--v--+  +---------v--------+  +------v------+
+    |    | END |  |    Mix state     |  |  Mix state  |
+    |    +-----+  | with input_param |  | with pepper |
+    |             +------------------+  +-------------+
+    |                       |                  |
+    |               +-------v-------+    +-----v-----+
+    |               | n = n * 3 + 1 |    | n = n / 2 |
+    |               +---------------+    +-----------+
+    |                       |                  |
+    |-----------------------| <----------------|
+
+The one thing to notice here is that if `n` is even at any point:
+  1. `n` will stay even until the end of the Collatz algorithm
+     (which ends with `n == 1`);
+  2. `input_param` is never used again.
+
+As a result, if n is a power of two at the start of the algorithm,
+`input_param` is completely bypassed.
+
+## __ckdf_core
+
+Now, let's look at `__ckdf_core`:
+
+    state = _hash(user)                             # Round 0
+    state = __ckdf_round(state, salt, pepper1)      # Round 1
+    state = __ckdf_round(state, password, pepper2)  # Round 2
+    return (salt + state).encode('hex')             # Output formatting
+
+As you can guess, the salt **and** password are used as `input_param` in
+`__ckdf_round`, and both of them can be bypassed if `n` is even at the very
+beginning of each `__ckdf_round`.
+
+## Putting things together
+
+So the only thing we need for the backdoor to be used is some special values of
+`pepper1` and `pepper2` for which, if the user is admin, `n` is even at the
+very beginning of each round. How to compute those values is the subject of the
+next section.
+
+
+Computing the backdoor
+======================
+
+First thing to notice is that one can compute a backdoored `pepper1` value
+first, and then a matching `pepper2` value.
+
+## Backdooring one round
+
+How many tries could we expect to compute before finding a `pepper` for one
+round?
+
+Let's assume that the first bytes of a sha512 digest are random. So we have
+2^32 possible values of `n`. However, we are looking for `n` being any power of
+two (1, 2, ..., 2^31), and there are 32 = 2^5 of them. In other words, we can
+expect to find our special `pepper` within 2^(32-5) = 2^27 tries.
+
+## Backdooring the two rounds
+
+Once we have `pepper1`, we can do the same thing for `pepper2`. So backdooring
+the two rounds is expected to happen within 2^27 + 2^27 = 2^28 tries.
+
+2^28 computations of sha512 (this is basically what takes time) can be achieved
+on any regular computer (a few minutes or hours depending on the computing
+power, the programming language used and so on).
+
+## Making a genuine-looking pepper1
+
+An other difficulty was to hide the amount of bruteforce needed into the
+peppers.
+
+For `pepper1`, I simply chose to hide it as a short URL. I allowed characters
+in `[a-zA-Z0-9]` (62 possibilities), so 5 characters are enough (62^5 > 2^29).
+
+Indeed, I found 7 different values of `pepper1` with the prefix I chose
+(`Detailed documentation at http://r.rogdham.net/`): VAakh, Vd6jB, oxWoH,
+TdlBI, z3jyP, DbdyR, Y1nUZ. Which makes sense since 62^5 / 2^27 ~= 6.8.
+
+## Making a genuine-looking pepper2
+
+The problem was that I could not use the same trick twice. So I came up with an
+other idea for `pepper2`. Looking at http://copyheart.org/, you can find
+various suggestions like `<3 2010 by Author/Artist. Copying Art is an act of
+love. Please copy and share.`. I chose to make more combinations of this
+sentence, by cutting it in blocks, and using different values for each block.
+
+For example, I replaced `2010 by Author/Artist` with one of the following
+possibilities: `Rogdham 2014`, `Rogdham, 2014`, `2014 by Rogdham`.
+
+An other example is just after, where the separator (`.` in the starting
+string) is chosen among `;`, `,`, ` | `, `. `, ` - `, ` / `, ` // `, ` ~ `,
+` `, ` <3`.
+
+And so on and so forth.
+
+Finally, I came up with more than 2^20 different values for `pepper2`. To fill
+the gap between 2^20 and the needed 2^27, I chose to make more bruteforce on
+`pepper1`, using 6 characters. As 62^6 > 2^35, a full bruteforce of the 6
+characters space would have taken forever, so I stopped after ~64 values of
+`pepper1`, which gave me an additional 64 = 2^6 possibilities. I now have 2^20
+x 2^6 = 2^26 different (`pepper1`, `pepper2`) couples to bruteforce, which is
+something like 50% chance to get a valid match. If that was not enough, I could
+continue generating more values for `pepper1`.
+
+However I was lucky as this came up positive, and here is the winning pepper
+couple:
+ - `pepper1`: `Detailed documentation at http://r.rogdham.net/kNBkwa`
+ - `pepper2`: `Copyheart Rogdham, 2014 ~ Sharing is caring... Please copy!`
+
+I think that `pepper2` looks quite innocent: you were likely no to think that
+there was a 2^20 bruteforce behind it -- which was precisely the point.

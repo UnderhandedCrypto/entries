@@ -1,0 +1,9 @@
+Hi,
+
+Attached is my submission to Underhanded Crypto Contest.
+
+I've included the description in a lengthy comment in the source file.
+I hope that's OK, but if it should be a separate text file please let me
+know and I'll resend as a tarball with two files in it.
+
+Alexander

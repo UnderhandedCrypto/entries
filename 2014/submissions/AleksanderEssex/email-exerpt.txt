@@ -1,0 +1,9 @@
+Hi,
+
+Please find attacked a .zip file containing my submission to the =
+Underhanded Crypto Contest entitled: "Indiscreet Logs: Forging DSA =
+Signatures in OpenSSL=E2=80=9D
+
+regards,
+Aleks Essex
+

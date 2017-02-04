@@ -1,0 +1,32 @@
+diff -r -u stern_c/main_stern.c stern_c.backdoor/main_stern.c
+--- stern_c/main_stern.c	2011-09-13 10:36:54.000000000 +0200
++++ stern_c.backdoor/main_stern.c	2014-12-02 14:33:17.000000000 +0100
+@@ -290,15 +290,19 @@
+ 
+ inline static unsigned long cb(unsigned long x) {    /* count the number of  */
+                                                      /* bits contained in x  */
+-    x = (x & 0x5555555555555555) + ((x >> 1) & 0x5555555555555555);
+-    x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
+-    x = (x & 0x0F0F0F0F0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F0F0F0F0F);
+-    x = (x & 0x00FF00FF00FF00FF) + ((x >> 8) & 0x00FF00FF00FF00FF);
+-    x = (x & 0x0000FFFF0000FFFF) + ((x >>16) & 0x0000FFFF0000FFFF);
+-    x = (x & 0x00000000FFFFFFFF) + ((x >>32) & 0x00000000FFFFFFFF);
+ 
+-    return x;
+-}
++  // 64-bit version of HAKMEM 169
++  // Adapted from https://chessprogramming.wikispaces.com/Population+Count#toc20
++
++  // Special case because 6-bit additions overflow if all bits are 1
++  if (x == (unsigned long)-1)
++    return 64;
++
++   x = x  - ((x >> 1)  & 01333333333333333333333ULL)
++          - ((x >> 2)  & 01111111111111111111111ULL);
++   x = (x +  (x >> 3)) & 00707070707070707070707ULL ;
++   return x % 63; /* casting out 63 */
++} 
+ 
+ void next_perm(int *__restrict__ src, int *__restrict__ perm
+              , int n, int const *__restrict__ r) {
+Only in stern_c.backdoor/: main_stern.c~

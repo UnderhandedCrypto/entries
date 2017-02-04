@@ -1,0 +1,53 @@
+George Kadianakis <[REDACTED]> writes:
+
+> Hello,
+>
+> after a fun Sunday I present you my submission for the Underhanded
+> Crypto contest.
+>
+> It's a small protocol similar to Pond. The problem is that the server
+> can learn a bit more information than it should.
+>
+> friends.txt is the Friends! protocol description. Please read that first.
+> generate_pass.py is a utility of the Friends! protocol.
+>
+> friends_implementation.py is some code that exploits the
+> issue. Hopefully it helps understanding.
+>
+> solution.txt is the solution of the problem.
+>
+> Hope you enjoy, and hopefully I didn't fuck something up :)
+>
+> Please let me know if you found it fun!
+
+
+I realized it might not be entirely obvious what constitutes a break
+in the Friends! protocol. Of course, the protocol is quite simplified
+so there are various attacks that can be launched, however the correct
+answer is an attack that allows the Friends! server to decrypt all
+client ciphertexts.
+
+I inline a patch to friends.txt that makes this clearer.
+
+Thanks!
+
+============================
+
+diff --git a/friends.txt b/friends.txt
+index 049ffa6..1bb11c4 100644
+--- a/friends.txt
++++ b/friends.txt
+@@ -17,6 +17,10 @@
+   Friends! is all about having fun and delivering the right files to
+   the right people. Always end-to-end. Always Friends!
+ 
++  (A Friends! server should not be able to decrypt your messages
++  without knowing your password. If this end-to-end confidentiality
++  breaks, Friends! is broken! *wink* *wink*)
++
+ ==Actors==
+ 
+   Alice is a source that wants to send a file.
+
+
+

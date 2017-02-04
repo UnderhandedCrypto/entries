@@ -1,0 +1,11 @@
+Author
+=========
+Jonas Nick
+
+What email address can we reach you at (required)? jonasd.nick@gmail.com
+
+What name / pseudonym would you like to be referred to by on the website (required)? nickler
+
+What website would you like us to link to (optional)? http://nickler.ninja
+
+What is your Twitter handle (optional)? @nickler

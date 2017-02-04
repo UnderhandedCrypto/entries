@@ -1,0 +1,36 @@
+The problem is caused by a design decision of HMAC.
+
+The HMAC RFC (in section "3. Keys") states:
+
+       The key for HMAC can be of any length (keys longer than B bytes are
+       first hashed using H)...
+
+which basically means that in a protocol that uses HMAC keys larger
+than the HMAC block size, someone who knows an HMAC key can easily
+create a second equivalent HMAC key (just by hashing the large key).
+
+Maybe the following Python code makes it clearer:
+
+       In [1]: key1 = "that is not the most secure method to use. MD5 hashes have some weaknesses"
+
+       In [2]: key2=hashlib.sha1(key1).digest()
+
+       In [3]: d1 = hmac.new(key1, msg='flow', digestmod=hashlib.sha1)
+       In [4]: d2 = hmac.new(key2, msg='flow', digestmod=hashlib.sha1)
+
+       In [5]: d2.hexdigest ()
+       Out[5]: '470759c236a74601fc56c76327a859746afc4616'
+
+       In [6]: d1.hexdigest ()
+       Out[6]: '470759c236a74601fc56c76327a859746afc4616'
+
+This behavior was revealed to me by this tweet of Dmitry Chestnykh:
+https://twitter.com/dchest/status/421595430539894784/photo/1
+
+Friends! is just a quick protocol I cooked up to exploit the HMAC
+behavior.
+
+Friends! were made! :)
+
+Have a good day!
+

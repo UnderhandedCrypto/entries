@@ -1,0 +1,8 @@
+*.o
+*.hi
+src
+dist
+TAGS
+network-simple-tls
+.cabal-sandbox/
+cabal.sandbox.config

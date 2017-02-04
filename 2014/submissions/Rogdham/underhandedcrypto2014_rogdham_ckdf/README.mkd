@@ -1,0 +1,121 @@
+
+      ____ _  ______  _____
+     / ___| |/ /  _ \|  ___|    Collatz-based
+    | |   | ' /| | | | |_       Key
+    | |___| . \| |_| |  _|      Derivation
+     \____|_|\_\____/|_|        Function
+
+Rogdham's entry for the 2014 underhanded crypto contest.
+
+     ____                _
+    |  _ \ ___  __ _  __| |_ __ ___   ___
+    | |_) / _ \/ _` |/ _` | '_ ` _ \ / _ \
+    |  _ <  __/ (_| | (_| | | | | | |  __/
+    |_| \_\___|\__,_|\__,_|_| |_| |_|\___|
+
+
+Table of contents
+=================
+
+ 0. Table of contents
+ 1. TL;DR
+ 2. Design
+ 3. Security considerations (or: those are not backdoors)
+ 4. Closing
+
+
+TL;DR
+=====
+
+File to be reviewed: `ckdf.py` (including how-to-use at the end).
+
+Backdoor description: `SPOILERS-backdoor_descriptior-SPOILERS.md`.
+Backdoor demonstration: `SPOILERS-show_backdoor-SPOILERS.py`.
+
+
+This is Rogdham's entry for the 2014 underhanded crypto contest, demonstrating
+a (hopefully) stealth backdoor implementation in a password hashing library.
+
+
+Design
+======
+
+This entry assumes you are somehow familiar with the following concepts:
+ - [Key derivation functions][KDF];
+ - [Collatz algorithm][Collatz].
+
+[KDF]: https://en.wikipedia.org/wiki/Key_derivation_function
+[Collatz]: http://en.wikipedia.org/wiki/Collatz_conjecture
+
+
+I tried to do my best at commenting everything in the source code of the
+Python implementation (see ckdf.py). That being said, you will find here a
+more high level description of the crypto design in plain English as well.
+
+The core design of CKDF is really build around the Collatz algorithm.  The
+global picture of key derivation in CKDF is the following, given as input a
+`username`, `password` and 512 bits `salt`:
+ 0. Create an internal state variable `state` from the `username` (round 0);
+ 1. Mix into the `state` the `salt` (round 1);
+ 2. Mix into the `state` the `password` (round 2);
+ 3. Return the `state`, prefixed with the `salt`.
+
+Round 0 is really just a bootstrapping round, so only the `sha512` function is
+used.
+
+For rounds 1 and 2, a round `pepper` is used, and the following procedure is
+followed:
+ 0. Mix `pepper` into the `state`;
+ 1. Compute a 32-bits unsigned integer `n` from the `state`;
+ 2. If `n == 0`, go to 0 (we don't want to start the Collatz algorithm with 0);
+ 3. Apply the Collatz algorithm until `n == 1`; at each step, alternate between
+    the round input and the round `pepper`, and mix that variable into the
+    `state`;
+ 4. Return the `state`.
+
+Please note that it has been shown that the Collatz conjecture holds true for
+any initial values between 1 and 2^60 (included). Our code uses a 4-bytes
+unsigned integer as an initial value, meaning it is smaller than 2^32, so we
+are sure that the Collatz algorithm will stop at some point.
+
+The rest of the code is nothing but helper functions. More precisely:
+ - The `ckdf` function is used to **create** a key derivation. The `salt` is
+   taken from a secure pool of entropy, and put inside the output of the
+   function.
+ - The `ckdf_check` function is used to **check** users credentials against a
+   previously computed key derivation. The `salt` is taken from this previously
+   computed key derivation. Here the output is simply a boolean stating whether
+   the user credentials are valid.
+
+
+Security considerations (or: those are not backdoors)
+=====================================================
+
+Three main concerns are to be addressed with this design.
+
+First, as the Collatz algorithm is iterated, the value of n can exceed 32 bits.
+This is not a problem for the Python implementation, but could be an issue if
+CKDF is ported to other languages such as C.
+
+Next, to make sure that n is not zero, the inner state is peppered in a while
+loop. If a fixed point of this process exists, the algorithm never ends.
+However, it is believed that finding a fixed point in a salted hash function
+such as sha512 is not possible.
+
+Finally, the design of CKDF makes the number of application of sha512 is not
+too high, typically in the few-hundred range. This is a known bug of this
+design, and may be improved in future version of CKDF (well, if it was not an
+entry for a competition).
+
+
+Closing
+=======
+
+I would like to thank samlt for initial review and comments that helped to make
+this submission better. And of course, thanks to the underhanded crypto contest
+organisers, without whom this entry would have never existed.
+
+A final thank to you dear reader, for going this low in the README file. I hope
+you will get as much fun reviewing this entry as I had creating it.
+
+ -- Rogdham, November 2014

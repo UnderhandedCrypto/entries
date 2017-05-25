@@ -1,3 +1,7 @@
+**Note Added by the Underhanded Crypto Contest Organizers: This entry is
+essentially identical to some submissions to the [Underhanded C Contest in
+2017](http://www.underhanded-c.org/_page_id_16.html).**
+
 # Underhanded Crypto contest submission
 ### by Ron Mordechai
 <hr>

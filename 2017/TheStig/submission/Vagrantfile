@@ -1,0 +1,16 @@
+# Minimal vagrant file, ubuntu zesty and golang version 1.7.4
+# Just run "vagrant up" if you have Vagrant installed
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/zesty64"
+  config.vm.provision "shell", inline: <<EOF
+sudo apt-get update
+apt-get install -y golang
+echo "############################################"
+echo "##                                        ##"
+echo "##    Now you can run all tests with:     ##"
+echo "##    vagrant ssh -- /vagrant/test.sh     ##"
+echo "##                                        ##"
+echo "############################################"
+exit 0
+EOF
+end

@@ -1,0 +1,23 @@
+Which author is the primary contact for your team (required if you have multiple authors)?
+
+- Ella Rose
+
+Author #1
+=========
+
+Which email address should we use to contact you? 
+
+    - python_pride@protonmail.com
+
+What name / pseudonym would you like us to use for you on our website?
+    
+    - Ella Rose
+
+Is there a website you'd like us to link to on our website when we mention your name?
+
+    - https://crypto.stackexchange.com/users/29554/ella-rose 
+
+What's your Twitter handle?
+
+    - N/A
+    

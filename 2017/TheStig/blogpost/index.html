@@ -1,0 +1,236 @@
+<p><meta http-equiv='Content-Type' content='text/html; charset=utf-8'>
+<style>
+body {
+	font-family: "Avenir Next", Avenir, 'Helvetica Neue', Calibri, Helvetica, Arial, sans-serif;
+	padding:1em;
+	margin:auto;
+	max-width: 80%;
+	background:#fefefe;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight: bold;
+}
+
+h1 {
+	color: #000000;
+	font-size: 2.4em;
+}
+
+h2 {
+	border-bottom: 1px solid #CCCCCC;
+	color: #000000;
+	font-size: 1.9em;
+}
+
+h3 {
+	font-size: 1.5em;
+}
+
+h4 {
+	font-size: 1.3em;
+}
+
+h5 {
+	font-size: 1.1em;
+}
+
+h6 {
+	color: #777777;
+	background-color: inherit;
+	font-size: 1em;
+}
+
+hr {
+	height: 0.2em;
+	border: 0;
+	color: #CCCCCC;
+	background-color: #CCCCCC;
+}
+
+p, blockquote, ul, ol, dl, li, table, pre {
+	margin: 15px 0;
+}
+
+a, a:visited {
+	color: #4183C4;
+	background-color: inherit;
+	text-decoration: none;
+}
+
+#message {
+	border-radius: 6px;
+	border: 1px solid #ccc;
+	display:block;
+	width:100%;
+	height:60px;
+	margin:6px 0px;
+}
+
+button, #ws {
+	font-size: 0.8em;
+	padding: 4px 6px;
+	border-radius: 5px;
+	border: 1px solid #bbb;
+	background-color: #eee;
+}
+
+code, pre, #ws, #message {
+	font-family: Monaco, "Courier New", Courier, monospace;
+	border-radius: 3px;
+	background-color: #F8F8F8;
+	color: inherit;
+}
+
+code, #ws, #message {
+	font-size: 0.8em;
+}
+
+code {
+	border: 1px solid #EAEAEA;
+	margin: 0 2px;
+	padding: 0 5px;
+}
+
+pre {
+	border: 1px solid #CCCCCC;
+	overflow: auto;
+	padding: 4px 8px;
+}
+
+pre > code {
+	border: 0px;
+	margin: 0px;
+	padding: 0px;
+}
+
+#ws { background-color: #f8f8f8; }
+
+.send { color:#77bb77; }
+.server { color:#7799bb; }
+.error { color:#AA0000; }
+
+@media print {
+	body { font-size: 60%; }
+	img { max-width: 100%; }
+}
+</style>
+
+<p><em>The rules allow to &quot;include a blog-post-style explanation&quot; with the
+submission. I'm not sure what counts as blog-post-style, but since the more
+technical explanation in <a href="../README-JUDGES.html">README-JUDGES.txt</a> is a bit on
+the technically heavy side, let's put the very same tools into the context of a
+war story! :)</em></p>
+
+<h2>The kidnapping of Comrade #852</h2>
+
+<p>Redland and Blueland has always been regional rivals. Now Redland has kidnapped
+Blueland's lead scientist, and is forcing him to work for <em>them</em>.</p>
+
+<h2>Cast:</h2>
+
+<ul>
+<li>Comrade #852 - A former Blueland scientist, abducted by Redland from Blueland</li>
+<li>Comrade #1 - Dear Leader of the glorious state of Redland</li>
+<li>Comrade #23 - Redland's zealously faithful software developer</li>
+</ul>
+
+<h2>Day 8 of abduction</h2>
+
+<p><em>Situation room of Redland.</em></p>
+
+<p>Comrade #23: &quot;Dear Comrade #1, our magnificent leader. The scientist we
+abducted from Blueland, who we now call Comrade #852, has finally agreed to
+work for the glory of our great nation, Redland. His first suggestion is a
+new steganography algorithm, something completely different from previous
+'least significant bit in image or audio', 'number of spaces and tabs in text',
+'adding whitespace', etc ones.&quot;</p>
+
+<p>Comrade #1: &quot;What is his new steganography based on?&quot;</p>
+
+<p>Comrade #23: &quot;It is based on the ordering of lines in otherwise completely
+inconspicuous lists. Files like lists of inventories, lists of IP addresses,
+lists of sales transactions, lists of customers, lists of performance data,
+etc. Anything that can happen to be unordered normally.&quot;</p>
+
+<p>Comrade #1: &quot;How does it encode the bits?&quot;</p>
+
+<p>Comrade #23: &quot;Very simple: If by using string comparison a line compares
+&quot;bigger&quot; than the previous one, that means a &quot;1&quot; bit. If the line is &quot;smaller&quot;
+than the previous one, that means a &quot;0&quot; bit.&quot;</p>
+
+<p>Comrade #1: &quot;And how can the list be transmitted?&quot;</p>
+
+<p>Comrade #23: &quot;That's the best part! The list can be transmitted in any way:
+text file, excel file, printed out, even spoken on the phone or radio.&quot;</p>
+
+<p>Comrade #1: &quot;Sounds good. Go forward with it.&quot;</p>
+
+<p>Comrade #23: &quot;Thank you, our towering leader. I will code the encryption
+myself, so we can know that it's implemented well, for the greater glory of our
+brilliant nation, Redland!&quot;</p>
+
+<p><strong>Related code:</strong></p>
+
+<p><a href="../submission/1-encoder1/encoder1.go">encoder1.go</a> - Comrade #23's naive encoder</p>
+
+<p><a href="../submission/0-decoder/decoder.go">decoder.go</a> - Comrade #23's decoder</p>
+
+<h2>Day 64 of abduction</h2>
+
+<p><em>Situation room of Redland. Guards bring in Comrade #852, throw him on the floor.</em></p>
+
+<p>Comrade #1: &quot;Blueland is somehow identifying the secret messages hidden with
+your method, Comrade #852. You will now be executed.&quot;</p>
+
+<p>Comrade #852: &quot;Wait, the algorithm is not at fault, excellent Comrade #1, only
+Comrade #23's implementation of it! <em>He</em> must be a traitor. Let <em>me</em>
+reimplement the algorithm, for the greater glory of my new home Redland!&quot;</p>
+
+<p>Comrade #1: &quot;OK, You get one more chance, Comrade #852. Fix the implementation.
+If further messages are not intercepted, you get to live.&quot;</p>
+
+<p>Comrade #852: &quot;You are the wisest, Comrade #1.&quot;</p>
+
+<p><strong>Related code:</strong></p>
+
+<p><a href="../submission/2-analyze/analyze.go">analyze.go</a> - Blueland's statistical analysis tool</p>
+
+<p><a href="../submission/3-encoder2/encoder2.go">encoder2.go</a> - Comrade #852's less predictable encoder that avoids analysis</p>
+
+<h2>Day 192 of abduction</h2>
+
+<p><em>Situation room of Redland. Comrade #852, well dressed, now clearly a respected
+member of his new home country, on audience with Comrade #1.</em></p>
+
+<p>Comrade #852: &quot;Oh, sumptuous leader of ours, Comrade #1. As you know, with my
+new implementation of the algorithm, spiteful Blueland's statistical analysis
+is not working anymore. Now I humbly ask for one thing: my new lover,
+Comradess #278, is prisoner of war in abominable Blueland, I wish to send
+some covert messages to her, saying how I miss her.&quot;</p>
+
+<p>Comrade #1: &quot;You serve me well, Comrade #852. I allow you to do that. But be
+forewarned, all your messages will be screened, and we know your stego
+algorithm!&quot;</p>
+
+<p>Comrade #852: &quot;You are a shining light for all of us, our towering leader,
+Comrade #1.&quot;</p>
+
+<p><strong>Related code:</strong></p>
+
+<p><a href="../submission/4-superencoder/superencoder.go">superencoder.go</a> - Comrade #852 version of the encoder, embedding a secondary &quot;meta-message&quot;</p>
+
+<h2>Day 256 of abduction - Day 1 of freedom</h2>
+
+<p><em>The smoking ruins of the fortified gate of the compund.</em></p>
+
+<p>Comrade #1: &quot;HOW DID THIS HAPPEN!? How could Blueland's commando so precisely extract Comrade #852!?&quot;</p>
+
+<p>Comrade #23: &quot;We... We don't know... It's as if he somehow was able to
+communicate with Blueland... Which is impossible! We were watching him all the
+time! Reading his messages! Decoding his encoded ones! Could he... Could he be
+using a <strong>hidden channel INSIDE the hidden channel</strong>?&quot;</p>
+
+<p><strong>Related code:</strong></p>
+
+<p><a href="../submission/4-superencoder/superdecoder.go">superdecoder.go</a> - Blueland's decoder for the sencondary &quot;meta-message&quot; embedded into the stego's workings</p>

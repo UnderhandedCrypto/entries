@@ -1,0 +1,3 @@
+This code is released into the "public domain" by its author(s).  Anybody may
+use, alter and distribute the code without restriction.  The author makes no
+guarantees, and takes no liability of any kind for use of this code.

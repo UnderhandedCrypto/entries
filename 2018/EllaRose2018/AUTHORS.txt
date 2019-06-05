@@ -1,0 +1,19 @@
+Author #1
+=========
+
+Which email address should we use to contact you? (required)
+---
+
+python_pride@protonmail.com
+
+
+What name / pseudonym would you like us to use for you on our website (required)?
+---
+
+Ella Rose
+
+
+Is there a website you'd like us to link to on our website when we mention your name (optional)?
+
+https://keybase.io/ella_rose
+
